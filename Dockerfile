@@ -15,8 +15,7 @@ RUN apk add --no-cache git ca-certificates
 WORKDIR /src/amneziawg-go
 RUN git init . && git remote add origin https://github.com/amnezia-vpn/amneziawg-go.git \
     && git fetch --depth 1 origin "${AWG_GO_REF}" && git checkout --detach FETCH_HEAD
-RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 go build -buildvcs=false -trimpath -ldflags="-s -w -buildid=" -o /out/amneziawg-go .
+RUN CGO_ENABLED=0 go build -buildvcs=false -trimpath -ldflags="-s -w -buildid=" -o /out/amneziawg-go .
 
 FROM ${GOLANG_IMAGE} AS awg-tools-builder
 RUN apk add --no-cache git make bash build-base linux-headers ca-certificates
