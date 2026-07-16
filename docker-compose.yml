@@ -1,0 +1,75 @@
+services:
+  amnezia-gateway:
+    image: 565795/amnezia-gateway
+    
+    container_name: amnezia-gateway
+    restart: unless-stopped
+    stop_grace_period: 20s
+
+    # Stricter security: only required capabilities
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_ADMIN
+
+    # For WireGuard/TUN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+
+    # Block privilege escalation
+    security_opt:
+      - no-new-privileges:true
+
+    # Kernel parameters for tunnel operation
+    sysctls:
+      net.ipv4.ip_forward: "1"
+      net.ipv6.conf.all.forwarding: "1"
+      net.ipv4.conf.all.src_valid_mark: "1"
+
+    # Docker only. RouterOS/MikroTik Container may not support these options.
+    # Remove them when deploying on MikroTik.
+    mem_limit: 256m
+    cpus: 1.0
+    pids_limit: 100
+
+    # File descriptor limits
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+
+    environment:
+      # Optional: 0 = first .conf by sort order; 1 = random .conf
+      # Default (if unset): 0
+      # ENABLE_RANDOM: "1"
+
+      # Optional: if unset/empty => full-tunnel,
+      # if set to any non-empty value (e.g. "1") => split-tunnel
+      # Default (if unset): full-tunnel
+      # DISABLE_TUNNEL_MODE: "1"
+
+      # Networks that should bypass the VPN tunnel via local gateway (comma-separated)
+      LAN_NETWORK: "192.168.0.0/16"
+
+    ports:
+      # SECURITY: This service is LAN-only by design. Never expose 1080/8181 to WAN.
+      # SOCKS5 Proxy
+      - "1080:1080"
+      # HTTP Proxy
+      - "8181:8080"
+
+    volumes:
+      - ${WG_CONFIG_DIR:-./config/wireguard}:/etc/amnezia/amneziawg:ro
+      # 3proxy dir: custom config is optional (if file missing, built-in default is used)
+      - ./config/3proxy:/etc/3proxy-ext:ro
+
+    # Volatile data in tmpfs (reduces disk footprint)
+    tmpfs:
+      - /tmp
+      - /run
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

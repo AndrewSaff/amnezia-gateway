@@ -1,0 +1,23 @@
+# Local runtime configs/secrets
+config/wireguard/*.conf
+config/wireguard/*.key
+config/wireguard/*.pem
+config/3proxy/3proxy.custom.cfg
+dev-notes.local.txt
+
+# OS
+*.log
+*.pid
+.env
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker build cache
+.docker/

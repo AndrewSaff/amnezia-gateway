@@ -1,0 +1,5 @@
+services:
+  amnezia-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile

@@ -1,0 +1,23 @@
+# VCS
+.git
+.gitignore
+
+# Local runtime config/secrets
+config/wireguard/*.conf
+config/wireguard/*.key
+config/wireguard/*.pem
+
+# Local artifacts/logs
+*.log
+*.tmp
+*.bak
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Docs not required for image
+README.md
+dev-notes.local.txt

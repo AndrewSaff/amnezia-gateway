@@ -1,0 +1,150 @@
+# 🔐 Amnezia Gateway Container
+
+[![Docker Multi-Arch Build](https://github.com/AndrewSaff/amnezia-gateway/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/AndrewSaff/amnezia-gateway/actions/workflows/docker-publish.yml)
+[![Docker Pulls](https://img.shields.io/docker/pulls/565795/amnezia-gateway.svg)](https://hub.docker.com/r/565795/amnezia-gateway)
+[![Docker Image Size](https://img.shields.io/docker/image-size/565795/amnezia-gateway/latest)](https://hub.docker.com/r/565795/amnezia-gateway)
+[![Platforms](https://img.shields.io/badge/platforms-amd64%20%7C%20arm64%20%7C%20arm%2Fv7-blue)](https://hub.docker.com/r/565795/amnezia-gateway/tags)
+
+Lightweight multi-architecture Docker image providing an AmneziaWG tunnel with 3proxy (SOCKS5 + HTTP).
+
+---
+
+## 🌐 English
+
+### ✨ Features
+- 🚀 **Multi-arch**: `amd64`, `arm64`, `arm/v7`
+- 🔒 **AmneziaWG** tunnel (AWG protocol, compatible with WireGuard configs)
+- 🌐 **3proxy**: SOCKS5 (`:1080`) + HTTP (`:8080`) proxy
+- 🔀 **Full-tunnel** or **split-tunnel** mode
+- 🏠 **LAN bypass**: routes local networks outside the VPN
+- 🎲 **Random config** selection from multiple `.conf` files
+- 🛡️ **Minimal privileges**: `cap_drop: ALL`, `no-new-privileges`, tmpfs
+- 📦 Auto-builds via GitHub Actions
+- 🩺 Built-in healthcheck with automatic tunnel restart
+
+### 📁 Project Structure
+```text
+amnezia-gateway/
+├── .github/workflows/docker-publish.yml
+├── docker/
+│   ├── scripts/
+│   │   ├── start.sh
+│   │   ├── start-wg.sh
+│   │   └── healthcheck.sh
+│   └── 3proxy/
+│       └── 3proxy.cfg
+├── config/
+│   ├── wireguard/         # your .conf files (not committed)
+│   └── 3proxy/            # optional custom config (not committed)
+├── Dockerfile
+├── docker-compose.yml
+├── docker-compose.dev.yml
+└── README.md
+```
+
+### 🔌 Ports
+| Port | Protocol | Service |
+|------|----------|--------|
+| `1080` | TCP | SOCKS5 proxy |
+| `8181` | TCP | HTTP proxy (host) → `8080` (container) |
+
+### 📦 Quick Start
+**Docker Compose (recommended):**
+```bash
+git clone https://github.com/AndrewSaff/amnezia-gateway.git
+cd amnezia-gateway
+# place your .conf files in config/wireguard/
+docker compose up -d
+```
+**Development (build locally from Dockerfile):**
+```bash
+git clone https://github.com/AndrewSaff/amnezia-gateway.git
+cd amnezia-gateway
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+```
+
+### ⚙️ Environment Variables
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ENABLE_RANDOM` | `0` | `0` = first `.conf`, `1` = random `.conf` |
+| `DISABLE_TUNNEL_MODE` | *(unset)* | unset/empty = full-tunnel, `1` = split-tunnel |
+| `LAN_NETWORK` | `192.168.0.0/16` | comma-separated subnets bypassing VPN via local gateway |
+
+### ⚠️ Security Notice (LAN/WAN)
+By default, this container is intended to work as a **LAN gateway** and listens on `0.0.0.0` for:
+- `1080` (SOCKS5)
+- `8080` (HTTP proxy, mapped to host `8181`)
+
+This is intentional for local-network usage.
+
+**Do not expose these ports to the Internet (WAN).**  
+You must enforce firewall rules to allow access only from trusted LAN subnets and block all WAN access.
+
+Minimum requirement:
+- Allow: trusted LAN ranges only
+- Deny: all WAN traffic to `1080/tcp` and `8181/tcp`
+
+If you do not need LAN-wide access, bind ports to localhost (`127.0.0.1`) instead.
+
+### Docker CLI:
+```bash
+docker run -d --name amnezia-gateway --restart unless-stopped \
+  --cap-drop ALL --cap-add NET_ADMIN \
+  --device /dev/net/tun:/dev/net/tun \
+  --security-opt no-new-privileges:true \
+  --sysctl net.ipv4.ip_forward=1 \
+  --sysctl net.ipv6.conf.all.forwarding=1 \
+  --sysctl net.ipv4.conf.all.src_valid_mark=1 \
+  -p 1080:1080 -p 8181:8080 \
+  -v $(pwd)/config/wireguard:/etc/amnezia/amneziawg:ro \
+  -v $(pwd)/config/3proxy:/etc/3proxy-ext:ro \
+  -e LAN_NETWORK="192.168.0.0/16" \
+  --tmpfs /tmp --tmpfs /run \
+  565795/amnezia-gateway:latest
+```
+
+### 🛠️ Custom 3proxy Configuration
+Default 3proxy config is baked into the image (`docker/3proxy/3proxy.cfg`). To override it without rebuilding:
+1. Create the custom config:
+```bash
+mkdir -p config/3proxy
+cp docker/3proxy/3proxy.cfg config/3proxy/3proxy.custom.cfg
+```
+2. Edit `config/3proxy/3proxy.custom.cfg` as needed.
+3. Restart: `docker compose down && docker compose up -d`
+
+### 📡 MikroTik Deployment
+1. Prepare storage
+```routeros
+/docker set mount-dir=/usb/docker
+```
+2. Pull image
+```routeros
+/docker/pull 565795/amnezia-gateway:latest
+```
+3. Create & start container
+```routeros
+/docker/add name=amnezia-gateway image=565795/amnezia-gateway:latest root-dir=/usb/docker/amnezia-gateway
+/docker/start amnezia-gateway
+```
+4. For split-tunnel mode, set `DISABLE_TUNNEL_MODE=1` and configure `AllowedIPs` in your WG config.
+5. Block WAN access:
+```routeros
+/ip/firewall/filter/add chain=input in-interface=wan protocol=tcp dst-port=1080,8181 action=drop comment="Block proxy ports on WAN"
+```
+
+### ✅ Verify Connectivity
+
+SOCKS5:
+```bash
+curl --proxy socks5h://127.0.0.1:1080 https://ifconfig.me
+```
+
+HTTP Proxy:
+```bash
+curl -x http://127.0.0.1:8181 https://ifconfig.me
+```
+
+<!-- -->
+<!-- -->
+📄 License: MIT. Use at your own risk. AmneziaWG is a project of Amnezia VPN.
