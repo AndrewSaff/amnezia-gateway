@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-ARG GOLANG_IMAGE=golang:1.24.4-alpine3.22@sha256:68932fa6d4d4059845c8f40ad7e654e626f3ebd3706eef7846f319293ab5cb7a
+ARG GOLANG_IMAGE=golang:1.25-alpine3.22@sha256:65b4400aee0927412e9ed791a11893273a49d55df24841f7599660fb80dae464
 ARG ALPINE_IMAGE=alpine:3.22.4@sha256:310c62b5e7ca5b08167e4384c68db0fd2905dd9c7493756d356e893909057601
 # Pinned upstream refs (commit hashes for reproducible builds)
 # amneziawg-go v0.2.19
