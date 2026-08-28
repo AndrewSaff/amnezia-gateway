@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-ARG GOLANG_IMAGE=golang:1.25.12-alpine3.22
+ARG GOLANG_IMAGE=golang:1.25.12
 ARG ALPINE_IMAGE=alpine:3.22.4@sha256:310c62b5e7ca5b08167e4384c68db0fd2905dd9c7493756d356e893909057601
 # Pinned upstream refs (commit hashes for reproducible builds)
 # amneziawg-go AWG 3.1 + RandomTrailers HandshakeCookie fix (2026-08-13)
@@ -11,13 +11,13 @@ ARG AWG_TOOLS_REF=ee0f0a9aa34ff0a0da4b3433b9512781cfe02843
 ARG PROXY3_REF=a2641cb103438b8caa5fcc551f085bcb5f244d47
 
 FROM ${GOLANG_IMAGE} AS awg-go-builder
-RUN apk add --no-cache git ca-certificates
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /src/amneziawg-go
 RUN git init . && git remote add origin https://github.com/amnezia-vpn/amneziawg-go.git \
     && git fetch --depth 1 origin "${AWG_GO_REF}" && git checkout --detach FETCH_HEAD
 RUN CGO_ENABLED=0 go build -buildvcs=false -trimpath -ldflags="-s -w -buildid=" -o /out/amneziawg-go .
 
-FROM ${GOLANG_IMAGE} AS awg-tools-builder
+FROM ${ALPINE_IMAGE} AS awg-tools-builder
 RUN apk add --no-cache git make bash build-base linux-headers ca-certificates
 WORKDIR /src/amneziawg-tools
 RUN git init . && git remote add origin https://github.com/amnezia-vpn/amneziawg-tools.git \
