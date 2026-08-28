@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1.7
 
-ARG GOLANG_IMAGE=golang:1.25-alpine3.22@sha256:65b4400aee0927412e9ed791a11893273a49d55df24841f7599660fb80dae464
+ARG GOLANG_IMAGE=golang:1.25.12-alpine3.22
 ARG ALPINE_IMAGE=alpine:3.22.4@sha256:310c62b5e7ca5b08167e4384c68db0fd2905dd9c7493756d356e893909057601
 # Pinned upstream refs (commit hashes for reproducible builds)
-# amneziawg-go v0.2.19
-ARG AWG_GO_REF=1cc94272ca8e9e223a5fe76382f5880f09d3c12d
-# amneziawg-tools v1.0.20260618-2
-ARG AWG_TOOLS_REF=61e741780e8465a67a7d7fb6cffe14a8a15d624a
+# amneziawg-go AWG 3.1 + RandomTrailers HandshakeCookie fix (2026-08-13)
+ARG AWG_GO_REF=1b86b2ae0e493e7ea93f8c1a0f0cb6735b1551f1
+# amneziawg-tools v3.1.20260812
+ARG AWG_TOOLS_REF=ee0f0a9aa34ff0a0da4b3433b9512781cfe02843
 # 3proxy 0.9.6
 ARG PROXY3_REF=a2641cb103438b8caa5fcc551f085bcb5f244d47
 
@@ -36,7 +36,7 @@ ARG TARGETPLATFORM
 ARG TARGETARCH
 LABEL org.opencontainers.image.title="amnezia-gateway" \
       org.opencontainers.image.description="AmneziaWG + 3proxy gateway container" \
-      org.opencontainers.image.source="local" \
+      org.opencontainers.image.source="https://github.com/AndrewSaff/amnezia-gateway" \
       org.opencontainers.image.vendor="self-hosted"
 
 # Minimal runtime dependencies for awg/iptables/healthcheck
@@ -59,7 +59,8 @@ COPY --from=proxy-builder /src/3proxy/bin/3proxy /usr/bin/3proxy
 COPY --chmod=0755 docker/scripts/ /opt/amnezia/scripts/
 COPY docker/3proxy/3proxy.cfg /etc/3proxy/3proxy.cfg
 
-# Fix shebang to bash and apply sysctl patch
+# awg-quick is a bash script upstream. Keep the src_valid_mark guard so
+# containers with the sysctl preconfigured do not try to rewrite it.
 RUN sed -i '1s|#!/bin/sh|#!/usr/bin/bash|' /usr/bin/awg-quick && \
     sed -i 's|\[\[ \$proto == -4 \]\] && cmd sysctl -q net.ipv4.conf.all.src_valid_mark=1|[[ $proto == -4 ]] \&\& [[ $(sysctl -n net.ipv4.conf.all.src_valid_mark) != 1 ]] \&\& cmd sysctl -q net.ipv4.conf.all.src_valid_mark=1|' /usr/bin/awg-quick
 
