@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-ARG GOLANG_IMAGE=golang:1.25.12
+ARG GOLANG_IMAGE=golang:1.25.12@sha256:dbeddb5e728ea4b5ba7920574413e311025ffa42d196793857e4d160e8dfe60d
 ARG ALPINE_IMAGE=alpine:3.22.4@sha256:310c62b5e7ca5b08167e4384c68db0fd2905dd9c7493756d356e893909057601
 # Pinned upstream refs (commit hashes for reproducible builds)
 # amneziawg-go AWG 3.1 + RandomTrailers HandshakeCookie fix (2026-08-13)
