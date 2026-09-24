@@ -3,8 +3,8 @@
 ARG GOLANG_IMAGE=golang:1.25.12@sha256:dbeddb5e728ea4b5ba7920574413e311025ffa42d196793857e4d160e8dfe60d
 ARG ALPINE_IMAGE=alpine:3.22.4@sha256:310c62b5e7ca5b08167e4384c68db0fd2905dd9c7493756d356e893909057601
 # Pinned upstream refs (commit hashes for reproducible builds)
-# amneziawg-go AWG 3.1 + RandomTrailers HandshakeCookie fix (2026-08-13)
-ARG AWG_GO_REF=1b86b2ae0e493e7ea93f8c1a0f0cb6735b1551f1
+# amneziawg-go v3.1.20260828 (RandomPaddingAddition + DisableCookies fixes)
+ARG AWG_GO_REF=b5928efb6ca19f0153958460c3d141f04abc5c2e
 # amneziawg-tools v3.1.20260812
 ARG AWG_TOOLS_REF=ee0f0a9aa34ff0a0da4b3433b9512781cfe02843
 # 3proxy 0.9.6
